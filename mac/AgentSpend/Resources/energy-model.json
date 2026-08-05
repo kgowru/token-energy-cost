@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "generated": "2026-07-27",
+  "unit": "watt_hours_per_1000_tokens",
+  "boundary": "full-datacenter",
+  "boundaryNote": "Includes accelerator, host CPU/DRAM, network/storage, and facility PUE. GPU-only accounting would be ~2.4x lower — Google's own comparison of the two boundaries.",
+
+  "headline": {
+    "claim": "These are modeled estimates, not measurements.",
+    "detail": "No frontier vendor publishes per-token energy. Anthropic publishes nothing at all. Measured energy for the same model on the same GPU varies ~100x between naive and optimized serving, so every figure here carries a wide band. Relative comparisons between models are far more robust than absolute values, because the shared serving-efficiency unknowns largely cancel.",
+    "sources": [
+      "https://arxiv.org/html/2601.22362v1"
+    ]
+  },
+
+  "anchors": [
+    { "label": "Google, median Gemini Apps text prompt", "wh": 0.24, "date": "2025-05", "confidence": "high", "url": "https://arxiv.org/abs/2508.15734" },
+    { "label": "Microsoft, median >200B-param query (peer-reviewed, Joule)", "wh": 0.31, "iqr": [0.16, 0.60], "date": "2026-04", "confidence": "high", "url": "https://www.cell.com/joule/fulltext/S2542-4351(26)00114-5" },
+    { "label": "Epoch AI, modeled GPT-4o @ 500 output tokens", "wh": 0.30, "range": [0.1, 4.0], "confidence": "medium", "url": "https://epoch.ai/gradient-updates/how-much-energy-does-chatgpt-use" }
+  ],
+
+  "defaults": {
+    "cacheReadFactor": {
+      "v": 0.10, "lo": 0.01, "hi": 0.30,
+      "confidence": "low",
+      "note": "THE dominant uncertainty in this tool. Cache reads are ~95% of local Claude Code token volume, so this single coefficient swings total energy by roughly 2x. No primary energy measurement of prompt-cache hits exists; architecturally a hit should skip prefill almost entirely, but the 10% price discount is a pricing decision, not a measured energy ratio. Exposed as a user-adjustable slider."
+    },
+    "cacheWriteFactor": {
+      "v": 1.0, "lo": 1.0, "hi": 1.25,
+      "confidence": "medium",
+      "note": "A cache write performs a full prefill pass, so ~1.0x fresh input energy. The 1.25x/2x price premium is billing, not physics; the upper bound allows for storage overhead."
+    },
+    "outputToInputRatio": {
+      "v": 4.0, "lo": 3.0, "hi": 5.0,
+      "confidence": "medium",
+      "note": "Per-token FLOPs are identical (2N) for prefill and decode; achieved efficiency is not. Prefill is one parallel GEMM (compute-bound, MFU 0.30-0.50); decode is a matrix-vector op streaming all weights from HBM per token (bandwidth-bound, MFU 0.08-0.12). Microsoft's Splitwise instrumented per-phase GPU power directly. Claude's own pricing uses exactly 5x. Claims of 50-100x are a batching artifact, not a physical ratio.",
+      "sources": [
+        "https://www.microsoft.com/en-us/research/wp-content/uploads/2023/12/Splitwise_ISCA24.pdf",
+        "https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/"
+      ]
+    }
+  },
+
+  "tiersNote": "For every Claude, GPT-4o, and Gemini model there are NO credible active-parameter figures published. Rather than invent them, models are assigned a tier anchored to the converged ~0.3 Wh median-query figure and scaled by published price ratio as a weak proxy for compute. Marked basis 'tier-proxy' and confidence 'low' throughout. Open-weight models with known active params should instead use basis 'active-params' and the formula below.",
+
+  "tiers": {
+    "frontier-large": { "whPer1kInput": { "v": 0.30, "lo": 0.10, "hi": 1.00 }, "whPer1kOutput": { "v": 1.20, "lo": 0.40, "hi": 4.00 } },
+    "frontier-mid":   { "whPer1kInput": { "v": 0.15, "lo": 0.05, "hi": 0.50 }, "whPer1kOutput": { "v": 0.60, "lo": 0.20, "hi": 2.00 } },
+    "frontier-small": { "whPer1kInput": { "v": 0.05, "lo": 0.017, "hi": 0.17 }, "whPer1kOutput": { "v": 0.20, "lo": 0.067, "hi": 0.67 } }
+  },
+
+  "formula": {
+    "note": "Used for models WITH published active-parameter counts (open-weight). Reproduces Epoch's independent GPT-4o result to within 12%. Cross-check against the memory-bandwidth bound and take the max, since decode is bandwidth-bound.",
+    "flopsBound": "wh_per_token = (2 * P_active) / (F_peak * MFU) * P_eff / 3600",
+    "bandwidthBound": "t_token = (P_total * bytes_per_param + KV_bytes) / (N_gpu * HBM_bandwidth)",
+    "constants": {
+      "h100_bf16_flops": 9.89e14,
+      "h100_hbm_bytes_per_s": 3.35e12,
+      "mfuPrefill": [0.30, 0.50],
+      "mfuDecode": [0.08, 0.12],
+      "wattsAtMeterPrefill": 1200,
+      "wattsAtMeterDecode": 1050,
+      "gpuToMeterMultiplier": 2.44,
+      "gpuToMeterBreakdown": "1.53 (server: CPU/DRAM/NIC/PSU) x 1.14 (network/storage) x 1.4 (facility PUE)"
+    },
+    "sanityCeiling": "Never estimate above naive TDP-based numbers; ML.ENERGY found TDP estimates overshoot measured energy by up to 4.1x.",
+    "sources": [
+      "https://www.amcompute.com/blog/the-power-budget-of-an-ai-data-center",
+      "https://arxiv.org/html/2505.06371v1",
+      "https://kipp.ly/transformer-inference-arithmetic/"
+    ]
+  },
+
+  "models": [
+    { "id": "claude-fable-5",    "tier": "frontier-large", "basis": "tier-proxy", "confidence": "low" },
+    { "id": "claude-mythos-5",   "tier": "frontier-large", "basis": "tier-proxy", "confidence": "low" },
+    { "id": "claude-opus-5",     "tier": "frontier-large", "basis": "tier-proxy", "confidence": "unknown", "note": "Observed in local logs; absent from the published model catalog. Tier inferred from naming only." },
+    { "id": "claude-opus-4-8",   "tier": "frontier-large", "basis": "tier-proxy", "confidence": "low" },
+    { "id": "claude-opus-4-7",   "tier": "frontier-large", "basis": "tier-proxy", "confidence": "low" },
+    { "id": "claude-opus-4-6",   "tier": "frontier-large", "basis": "tier-proxy", "confidence": "low" },
+    { "id": "claude-opus-4-5",   "tier": "frontier-large", "basis": "tier-proxy", "confidence": "low" },
+    { "id": "claude-sonnet-5",   "tier": "frontier-mid",   "basis": "tier-proxy", "confidence": "low" },
+    { "id": "claude-sonnet-4-6", "tier": "frontier-mid",   "basis": "tier-proxy", "confidence": "low" },
+    { "id": "claude-sonnet-4-5", "tier": "frontier-mid",   "basis": "tier-proxy", "confidence": "low" },
+    { "id": "claude-haiku-4-5",  "tier": "frontier-small", "basis": "tier-proxy", "confidence": "low" }
+  ],
+
+  "caveats": [
+    "Estimate, not measurement. No vendor publishes per-token energy for any closed frontier model.",
+    "Serving configuration swings measured results ~100x. Batch size and utilization dominate model choice.",
+    "Boundary is full-datacenter, not GPU-only. The two differ by ~2.4x.",
+    "Medians are not means. The distribution is heavily right-skewed; a long-context or reasoning-heavy request can be 10-100x the median.",
+    "Context length is not free. The same 500-token output costs ~0.3 Wh at short context and ~40 Wh at 100k input, because prefill attention is O(n^2) and every decode step re-reads a growing KV cache.",
+    "Excludes model training energy entirely.",
+    "This electricity was consumed in a datacenter, not on your machine.",
+    "Figures decay fast. Google reported a 33x energy reduction in 12 months. Everything here is timestamped."
+  ],
+
+  "equivalences": {
+    "note": "EPA/DOE-verified factors. usHomeKwhPerDay is the primary anchor used in the UI — at tens-to-hundreds of kWh, a home is the only relatable frame (a phone charge or kettle would be thousands of units). The other factors are kept as sourced reference. Deliberately excludes the debunked '0.3 Wh per Google search' (2009, ~17 years stale) and '4.6 t CO2/vehicle/year' (EPA's current figure is 4.29 t) zombie stats.",
+    "usHomeKwhPerDay": 29.0,
+    "usHomeNote": "Average US residential customer ~10,500 kWh/yr = ~28.8 kWh/day (EIA). Rounded to 29. A comparison, not a claim about any specific home.",
+    "ledBulbWatts": 9,
+    "smartphoneChargeWh": 28.446,
+    "kettleLiterWh": 110,
+    "streamingVideoWhPerHour": 80,
+    "gramsCO2ePerMileDriven": 393,
+    "sources": [
+      "https://www.eia.gov/tools/faqs/faq.php?id=97&t=3",
+      "https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator-calculations-and-references",
+      "https://www.energy.gov/cmei/femp/purchasing-energy-efficient-light-bulbs",
+      "https://www.iea.org/commentaries/the-carbon-footprint-of-streaming-video-fact-checking-the-headlines"
+    ]
+  },
+
+  "grid": {
+    "defaultCentsPerKwh": 18.44,
+    "defaultCentsPerKwhNote": "US average residential, May 2026 (EIA).",
+    "defaultGridGramsCO2ePerKwh": 348.0,
+    "defaultGridNote": "US average, eGRID2023 Rev.2: 767.209 lb CO2/MWh = 348 g/kWh. This is the AVERAGE output rate; EPA's equivalency calculator uses a ~2x higher MARGINAL rate. Average is used here and labeled as such.",
+    "sources": [
+      "https://www.eia.gov/opendata/",
+      "https://epa.gov/egrid/summary-data"
+    ]
+  }
+}

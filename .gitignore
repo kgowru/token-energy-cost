@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Swift / AgentSpend
+mac/.build/
+mac/build/
+
+# Python
+__pycache__/
+*.pyc
+
+# icon build intermediate
+mac/assets/*.iconset/

@@ -8,7 +8,7 @@
 
 So "switch to a cheaper model" becomes a quantified decision instead of a hunch.
 
-[Download](https://github.com/kgowru/token-energy-cost/releases/latest) · [The energy method](#the-honest-caveat)
+[Download](https://github.com/kgowru/token-energy-cost/releases/latest) · [Why I built it](content/blog/why-i-built-agentspend.md) · [The energy method](#the-honest-caveat)
 
 </div>
 
@@ -62,7 +62,7 @@ Microsoft's peer-reviewed 0.31 Wh median, Epoch AI's ~0.3 Wh for GPT-4o), then
 scaled by tier. The **Method** pane shows every coefficient, its band, and its
 source, and lets you drag the single assumption that moves the total most. Use
 the energy side for *relative* comparisons (this model vs. that one), not as a
-precise meter. The **Method** pane has the full reasoning behind every number.
+precise meter. The full reasoning is in the [blog post](content/blog/why-i-built-agentspend.md).
 
 ## Build from source
 

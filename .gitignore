@@ -50,6 +50,3 @@ __pycache__/
 
 # icon build intermediate
 mac/assets/*.iconset/
-
-# Local drafts, not part of this repo
-content/blog/

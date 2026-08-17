@@ -25,16 +25,19 @@ cp -R "$APP" "$STAGE/"
 rm -f "$DMG"
 
 # Icon positions (x,y from top-left) sit on the background arrow; keep these in
-# sync with assets/make-dmg-bg.swift if you move the arrow.
+# sync with assets/dmg-preview.html if you move the arrow. That page is the
+# background's source of truth — tweak it, export @1x + @2x, then rebuild the
+# HiDPI tiff:  tiffutil -cathidpicheck dmg-background.png dmg-background@2x.png \
+#                       -out dmg-background.tiff
 create-dmg \
   --volname "AgentSpend" \
   --volicon "assets/AgentSpend.icns" \
-  --background "assets/dmg-background.png" \
+  --background "assets/dmg-background.tiff" \
   --window-pos 200 120 \
-  --window-size 640 400 \
+  --window-size 640 380 \
   --icon-size 128 \
-  --icon "AgentSpend.app" 160 254 \
-  --app-drop-link 480 254 \
+  --icon "AgentSpend.app" 160 208 \
+  --app-drop-link 480 208 \
   --no-internet-enable \
   "$DMG" "$STAGE"
 

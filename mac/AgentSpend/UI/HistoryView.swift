@@ -6,6 +6,7 @@ import SwiftUI
 struct TodayView: View {
     @ObservedObject var engine: UsageEngine
     @AppStorage("historyDays") private var days = 14
+    @State private var projectsExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -25,10 +26,6 @@ struct TodayView: View {
             .pickerStyle(.segmented).labelsHidden()
 
             if days == 1 { todaySection } else { periodSection }
-
-            Text("Cost is exact, from published rates. Energy is a modelled estimate "
-                 + "and was consumed in a datacenter, not on your Mac.")
-                .font(.caption2).foregroundStyle(.tertiary)
         }
     }
 
@@ -45,12 +42,26 @@ struct TodayView: View {
             : baseline.reduce(0) { $0 + $1.usd } / Double(baseline.count)
         let projects = engine.byProject(engine.records(since: start))
 
+        // Traffic-light color for today's spend relative to the 30d average:
+        // green while under, yellow as it runs over, red once well past.
+        // Uncolored (primary) until there's both a baseline and activity today.
+        let overageColor: AnyShapeStyle = {
+            guard typical > 0, let t = today, t.requests > 0 else {
+                return AnyShapeStyle(.primary)
+            }
+            let ratio = t.usd / typical
+            if ratio < 1.0 { return AnyShapeStyle(.green) }
+            if ratio < 1.5 { return AnyShapeStyle(.yellow) }
+            return AnyShapeStyle(.red)
+        }()
+
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Today").font(.caption).foregroundStyle(.secondary)
                 Text(Format.usd(today?.usd ?? 0))
                     .font(.system(size: 28, weight: .medium, design: .rounded))
                     .monospacedDigit()
+                    .foregroundStyle(overageColor)
                 Text("\(Format.wh(today?.wh ?? 0)) · \(today?.requests ?? 0) requests")
                     .font(.caption2).foregroundStyle(.secondary)
                 Text(Format.homeEnergy(today?.wh ?? 0, engine.energyModel.equivalences))
@@ -59,14 +70,24 @@ struct TodayView: View {
             Spacer()
             if typical > 0, let t = today, t.requests > 0 {
                 let ratio = t.usd / typical
+                // Plain-language comparison instead of a bare "0.2×" multiplier,
+                // which readers have to mentally convert. Within ±10% reads as
+                // "about normal"; otherwise it's a percentage above/below.
+                let pct = Int((abs(ratio - 1) * 100).rounded())
+                let phrase = abs(ratio - 1) < 0.1 ? "About normal"
+                    : ratio < 1 ? "\(pct)% below normal"
+                                : "\(pct)% above normal"
+                // Mirror the "Today" column on the left: label, big number,
+                // then a smaller detail line underneath.
                 VStack(alignment: .trailing, spacing: 1) {
-                    Text("vs a typical day").font(.caption).foregroundStyle(.secondary)
-                    Text(String(format: "%.1f×", ratio))
-                        .font(.system(.title3, design: .rounded)).monospacedDigit()
+                    Text("Average").font(.caption).foregroundStyle(.secondary)
+                    Text(Format.usd(typical))
+                        .font(.system(size: 28, weight: .medium, design: .rounded))
+                        .monospacedDigit()
+                    Text(phrase)
+                        .font(.caption2)
                         .foregroundStyle(ratio > 1.5 ? AnyShapeStyle(.orange)
                                                      : AnyShapeStyle(.secondary))
-                    Text("30d avg \(Format.usd(typical))")
-                        .font(.caption2).foregroundStyle(.tertiary)
                 }
             }
         }
@@ -86,7 +107,8 @@ struct TodayView: View {
                 }
                 .font(.caption2).foregroundStyle(.secondary)
                 Divider()
-                ForEach(projects.prefix(6), id: \.project) { p in
+                let shown = projectsExpanded ? projects : Array(projects.prefix(3))
+                ForEach(shown, id: \.project) { p in
                     HStack {
                         Text(p.project).lineLimit(1)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -95,6 +117,17 @@ struct TodayView: View {
                             .foregroundStyle(.secondary)
                     }
                     .font(.caption).monospacedDigit()
+                }
+                if projects.count > 3 {
+                    Button(projectsExpanded
+                           ? "Show less"
+                           : "Show \(projects.count - 3) more") {
+                        projectsExpanded.toggle()
+                    }
+                    .buttonStyle(.borderless)
+                    .font(.caption2)
+                    .foregroundStyle(.tint)
+                    .padding(.top, 2)
                 }
             }
         }
@@ -127,7 +160,8 @@ struct TodayView: View {
             VStack(alignment: .trailing, spacing: 1) {
                 Text("Today").font(.caption).foregroundStyle(.secondary)
                 Text(Format.usd(today?.usd ?? 0))
-                    .font(.system(.title3, design: .rounded)).monospacedDigit()
+                    .font(.system(size: 28, weight: .medium, design: .rounded))
+                    .monospacedDigit()
                 if avg > 0, let t = today {
                     let ratio = t.usd / avg
                     Text(String(format: "%.1f× the %@ avg", ratio, "\(days)d"))

@@ -1,12 +1,18 @@
 import SwiftUI
 
-/// What to change, ranked by what it's worth.
+/// What to change, ranked by what it's worth. The Savings pane.
+///
+/// Ranked over the whole corpus, so this is about habits — the counterpart to
+/// Home's strip, which asks the same recommender about today alone.
 ///
 /// Each item leads with an action, then the measured evidence, then the caveat.
 /// The caveat isn't fine print — several of these depend on a judgement the logs
 /// can't make, and the user needs to see which ones.
 struct InsightsView: View {
     @ObservedObject var engine: UsageEngine
+    /// Viewing the full insights pane also counts as seeing today's advice, so
+    /// it clears the menu bar's "!" — same signature the Home strip records.
+    @AppStorage("seenRecsSignature") private var seenRecs = ""
 
     var body: some View {
         // One memoized bundle instead of recomputing the whole analysis on
@@ -38,6 +44,11 @@ struct InsightsView: View {
                     Text(Format.homeEnergy(result.totalWh, engine.energyModel.equivalences))
                         .font(.caption2).foregroundStyle(.tertiary)
                 }
+
+                // Says out loud what separates this from Home's strip, so two
+                // panes ranking the same recommender don't read as a bug.
+                Text("Ranked across your whole history — the patterns, not today.")
+                    .font(.caption).foregroundStyle(.secondary)
 
                 ForEach(Array(recs.enumerated()), id: \.element.id) { i, r in
                     RecommendationCard(rank: i + 1, rec: r)
@@ -73,6 +84,7 @@ struct InsightsView: View {
                     .font(.caption2).foregroundStyle(.tertiary)
             }
         }
+        .onAppear { seenRecs = engine.liveRecsSignature() }
     }
 }
 

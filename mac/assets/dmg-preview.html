@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AgentSpend DMG background — preview &amp; export</title>
+<style>
+  :root { --pt: 1px; } /* 1 logical point = 1 css px in the preview */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px;
+    font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #1c2b27;
+    /* Flat gray field with a subtle grayscale noise texture. */
+    background-color: #eef2f0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E");
+    display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .muted { color: #5a6b66; }
+  .stage { display: flex; flex-direction: column; gap: 12px; }
+
+  /* The DMG window chrome, sized to the logical window in POINTS (1pt = 1px here). */
+  .window {
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,.28), 0 2px 8px rgba(0,0,0,.15);
+    background: #fff; width: max-content;
+  }
+  .titlebar {
+    height: 28px; background: #2b2b2b; display: flex; align-items: center;
+    gap: 8px; padding: 0 13px; color: #d9d9d9; font-size: 12px; font-weight: 500;
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .r { background: #ff5f57; } .y { background: #febc2e; } .g { background: #28c840; }
+  .titlebar .name { margin-left: 6px; opacity: .85; }
+  .content { position: relative; }           /* holds bg canvas + icon overlay */
+  .content canvas { display: block; }
+  #fg { position: absolute; inset: 0; }       /* icon mockups, NOT exported */
+
+  /* Controls */
+  .panel {
+    background: #fff; border-radius: 12px; padding: 18px 20px;
+    box-shadow: 0 2px 14px rgba(0,0,0,.08); width: 300px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+  .row label { color: #35423f; }
+  .row input[type=number], .row input[type=text] {
+    width: 100%; padding: 5px 7px; border: 1px solid #cdd6d2; border-radius: 6px; font: inherit;
+  }
+  .row.two { grid-template-columns: 1fr 64px 64px; }
+  .row.two input { width: 100%; }
+  .sec { font-weight: 700; margin-top: 4px; border-top: 1px solid #e6ece9; padding-top: 12px; }
+  .sec:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
+  button {
+    font: inherit; font-weight: 600; padding: 9px 12px; border: 0; border-radius: 8px;
+    background: #0a6b4f; color: #fff; cursor: pointer;
+  }
+  button.secondary { background: #e6ece9; color: #0a6b4f; }
+  .pxreadout { font-variant-numeric: tabular-nums; }
+  code { background: #e6ece9; padding: 1px 5px; border-radius: 4px; }
+  .hint { font-size: 12px; color: #5a6b66; }
+</style>
+</head>
+<body>
+
+  <div class="stage">
+    <div>
+      <h1>DMG installer window — live preview</h1>
+      <div class="muted">Shown at true size: <span class="pxreadout" id="ptReadout"></span>
+        (this is what Finder displays). The mock icons are overlays — only the background is exported.</div>
+    </div>
+
+    <div class="window">
+      <div class="titlebar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="name">AgentSpend</span>
+      </div>
+      <div class="content" id="content">
+        <canvas id="bg"></canvas>
+        <canvas id="fg"></canvas>
+      </div>
+    </div>
+    <div class="hint">Tip: the app icon and Applications alias are drawn by Finder at the positions in
+      <code>make-dmg.sh</code> — the overlay here mirrors those coordinates so you can check alignment against the arrow.</div>
+  </div>
+
+  <div class="panel">
+    <div class="sec">Window (points)</div>
+    <div class="row"><label>Width</label><input type="number" id="W" value="640" /></div>
+    <div class="row"><label>Height</label><input type="number" id="H" value="380" /></div>
+
+    <div class="sec">Icons (center, from top-left)</div>
+    <div class="row"><label>Icon size</label><input type="number" id="iconSize" value="128" /></div>
+    <div class="row"><label>Row Y</label><input type="number" id="iconY" value="208" /></div>
+    <div class="row"><label>App X</label><input type="number" id="appX" value="160" /></div>
+    <div class="row"><label>Applications X</label><input type="number" id="appsX" value="480" /></div>
+
+    <div class="sec">Title</div>
+    <div class="row"><label>Text</label><input type="text" id="titleText" value="AgentSpend" /></div>
+    <div class="row"><label>Size</label><input type="number" id="titleSize" value="44" /></div>
+    <div class="row"><label>Y (baseline)</label><input type="number" id="titleY" value="86" /></div>
+
+    <div class="sec">Subtitle</div>
+    <div class="row"><label>Text</label><input type="text" id="subText" value="Minimize agent usage, save cost and energy." /></div>
+    <div class="row"><label>Size</label><input type="number" id="subSize" value="17" /></div>
+    <div class="row"><label>Y (baseline)</label><input type="number" id="subY" value="122" /></div>
+
+    <div class="sec">Arrow (agentspend-arrow.svg)</div>
+    <div class="row"><label>Show arrow</label><input type="checkbox" id="showArrow" checked /></div>
+    <div class="row"><label>Center X</label><input type="number" id="arrowCX" value="320" /></div>
+    <div class="row"><label>Center Y</label><input type="number" id="arrowY" value="208" /></div>
+    <div class="row"><label>Width</label><input type="number" id="arrowWidth" value="185" /></div>
+
+    <div class="sec">Export background PNG</div>
+    <div class="hint">Export at <b>1×</b> for a guaranteed-correct (non-Retina) background, or <b>2×</b> +
+      the <code>tiffutil</code> step below for a crisp Retina image.</div>
+    <button id="dl1">Download @1× (matches window)</button>
+    <button class="secondary" id="dl2">Download @2× (for Retina .tiff)</button>
+  </div>
+
+<script src="arrow-path.js"></script>
+<script>
+// ---- config, read live from the inputs -------------------------------------
+const $ = id => document.getElementById(id);
+const cfg = () => ({
+  W: +$('W').value, H: +$('H').value,
+  iconSize: +$('iconSize').value, iconY: +$('iconY').value,
+  appX: +$('appX').value, appsX: +$('appsX').value,
+  titleText: $('titleText').value, titleSize: +$('titleSize').value, titleY: +$('titleY').value,
+  subText: $('subText').value, subSize: +$('subSize').value, subY: +$('subY').value,
+  showArrow: $('showArrow').checked, arrowCX: +$('arrowCX').value,
+  arrowY: +$('arrowY').value, arrowWidth: +$('arrowWidth').value,
+});
+
+// Palette to match the target hero: black title, gray subtitle.
+const TITLE = '#0b0b0c';          // title
+const SUBGRAY = '#8a8d92';        // subtitle
+// (arrow colors come from ARROW.grad in arrow-path.js)
+
+// Deterministic PRNG so the noise texture is stable across redraws/exports.
+function makeRnd() { let s = 0x9E3779B9 >>> 0;
+  return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+
+// ---- the background: gradient + noise + arrow + text (this is what exports) --
+function drawBackground(ctx, c) {
+  const { W, H } = c;
+  // Flat light-gray field, top to bottom.
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#f8f8f9');
+  grad.addColorStop(1, '#f4f4f5');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+  // Subtle speckle noise.
+  const rnd = makeRnd();
+  for (let i = 0; i < W * H * 0.02; i++) {
+    const x = rnd() * W, y = rnd() * H, dark = rnd() < 0.5;
+    ctx.fillStyle = dark ? 'rgba(0,0,0,0.035)' : 'rgba(255,255,255,0.05)';
+    ctx.fillRect(x, y, 0.8, 0.8);
+  }
+
+  // Squiggly install arrow from agentspend-arrow.svg — a gradient-filled body
+  // plus a solid stroked arrowhead, rendered from ARROW.parts in arrow-path.js.
+  if (c.showArrow && typeof ARROW !== 'undefined') {
+    const scale = c.arrowWidth / ARROW.w;
+    const drawW = ARROW.w * scale, drawH = ARROW.h * scale;
+    ctx.save();
+    ctx.translate(c.arrowCX - drawW / 2, c.arrowY - drawH / 2);
+    ctx.scale(scale, scale);
+    for (const part of ARROW.parts) {
+      const p = new Path2D(part.d);
+      if (part.stroke) {
+        ctx.strokeStyle = part.stroke; ctx.lineWidth = part.width;
+        ctx.lineCap = part.cap || 'butt'; ctx.lineJoin = 'round';
+        ctx.stroke(p);
+      } else if (part.grad) {
+        const g = ctx.createLinearGradient(part.x1, 0, part.x2, 0);
+        for (const [col, off] of part.grad) g.addColorStop(off, col);
+        ctx.fillStyle = g; ctx.fill(p);
+      } else {
+        ctx.fillStyle = part.fill; ctx.fill(p);
+      }
+    }
+    ctx.restore();
+  }
+
+  // Title + subtitle, centered.
+  ctx.textAlign = 'center';
+  ctx.fillStyle = TITLE;
+  ctx.font = `400 ${c.titleSize}px -apple-system, "SF Pro Display", BlinkMacSystemFont, sans-serif`;
+  ctx.fillText(c.titleText, W / 2, c.titleY);
+  ctx.fillStyle = SUBGRAY;
+  ctx.font = `400 ${c.subSize}px -apple-system, "SF Pro Text", BlinkMacSystemFont, sans-serif`;
+  ctx.fillText(c.subText, W / 2, c.subY);
+}
+
+// ---- mock icons (overlay only, NEVER exported) -----------------------------
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function drawIcons(ctx, c) {
+  const s = c.iconSize, r = s * 0.225;
+  const TEAL = '#04AA82', BLUE = '#1942CD', ORANGE = '#F33700';  // bolt colors
+  // App icon: light rounded square with three colored bolts.
+  const ax = c.appX - s / 2, ay = c.iconY - s / 2;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.18)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 3;
+  const gg = ctx.createLinearGradient(ax, ay, ax, ay + s);
+  gg.addColorStop(0, '#f0f0f0'); gg.addColorStop(1, '#d9dedb');
+  ctx.fillStyle = gg; roundRect(ctx, ax, ay, s, s, r); ctx.fill();
+  ctx.restore();
+  // three diagonal slashes
+  const bolts = [[TEAL, -0.18], [BLUE, 0.0], [ORANGE, 0.18]];
+  ctx.lineWidth = s * 0.12; ctx.lineCap = 'round';
+  for (const [col, off] of bolts) {
+    ctx.strokeStyle = col;
+    const cx = c.appX + off * s, cy = c.iconY;
+    ctx.beginPath();
+    ctx.moveTo(cx - s * 0.16, cy - s * 0.22);
+    ctx.lineTo(cx + s * 0.04, cy);
+    ctx.lineTo(cx - s * 0.06, cy);
+    ctx.lineTo(cx + s * 0.16, cy + s * 0.22);
+    ctx.stroke();
+  }
+  label(ctx, 'AgentSpend', c.appX, c.iconY + s / 2 + 22);
+
+  // Applications: simple blue folder.
+  const fx = c.appsX - s / 2, fy = c.iconY - s * 0.36, fw = s, fh = s * 0.72;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.18)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 3;
+  ctx.fillStyle = '#5aaef0';
+  roundRect(ctx, fx, fy + fh * 0.12, fw * 0.42, fh * 0.22, 6); ctx.fill();  // tab
+  const fg = ctx.createLinearGradient(fx, fy, fx, fy + fh);
+  fg.addColorStop(0, '#7cc3f7'); fg.addColorStop(1, '#4f9fe8');
+  ctx.fillStyle = fg;
+  roundRect(ctx, fx, fy + fh * 0.22, fw, fh, 10); ctx.fill();
+  ctx.restore();
+  // little "A" glyph
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = s * 0.05; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(c.appsX - s * 0.12, c.iconY + s * 0.16);
+  ctx.lineTo(c.appsX, c.iconY - s * 0.14);
+  ctx.lineTo(c.appsX + s * 0.12, c.iconY + s * 0.16);
+  ctx.stroke();
+  label(ctx, 'Applications', c.appsX, c.iconY + s / 2 + 22);
+}
+function label(ctx, text, x, y) {
+  ctx.textAlign = 'center';
+  ctx.font = '500 15px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillStyle = '#26332f';
+  ctx.fillText(text, x, y);
+}
+
+// ---- render preview at devicePixelRatio for crispness ----------------------
+function setupCanvas(canvas, W, H) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+function render() {
+  const c = cfg();
+  $('ptReadout').textContent = `${c.W} × ${c.H} pt`;
+  const bctx = setupCanvas($('bg'), c.W, c.H);
+  bctx.clearRect(0, 0, c.W, c.H);
+  drawBackground(bctx, c);
+  const fctx = setupCanvas($('fg'), c.W, c.H);
+  fctx.clearRect(0, 0, c.W, c.H);
+  drawIcons(fctx, c);
+}
+document.querySelectorAll('input').forEach(el => el.addEventListener('input', render));
+
+// ---- export the BACKGROUND ONLY, at a chosen pixel scale -------------------
+function download(scale) {
+  const c = cfg();
+  const off = document.createElement('canvas');
+  off.width = c.W * scale; off.height = c.H * scale;
+  const ctx = off.getContext('2d');
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  drawBackground(ctx, c);
+  const a = document.createElement('a');
+  a.download = scale === 1 ? 'dmg-background.png' : `dmg-background@${scale}x.png`;
+  a.href = off.toDataURL('image/png');
+  a.click();
+}
+$('dl1').addEventListener('click', () => download(1));
+$('dl2').addEventListener('click', () => download(2));
+
+// Headless export mode: open with "?bg" to render ONLY the background,
+// full-viewport, so a screenshot produces the canonical dmg-background.png:
+//   chrome --headless --screenshot=out.png --window-size=640,420 \
+//          [--force-device-scale-factor=2] "file://…/dmg-preview.html?bg"
+if (location.search.includes('bg')) {
+  const c = cfg();
+  document.body.replaceChildren();
+  document.body.style.cssText = 'margin:0;padding:0;background:#fff';
+  const cv = document.createElement('canvas');
+  document.body.appendChild(cv);
+  drawBackground(setupCanvas(cv, c.W, c.H), c);
+} else {
+  render();
+}
+</script>
+</body>
+</html>

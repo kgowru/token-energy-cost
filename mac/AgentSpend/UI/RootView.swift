@@ -14,18 +14,22 @@ struct RootView: View {
             guard args.count > i + 1 else { return nil }
             return Tab(rawValue: args[i + 1].capitalized)
         }
-        _tab = State(initialValue: initialTab ?? fromArgs ?? .today)
+        _tab = State(initialValue: initialTab ?? fromArgs ?? .home)
     }
 
     enum Tab: String, CaseIterable, Identifiable {
-        case today = "History", activity = "Activity", insights = "Insights", method = "Method"
+        case home = "Home", sessions = "Sessions", savings = "Savings", method = "Method"
         var id: String { rawValue }
+
+        /// Method is reached from the footer instead. It's reference material
+        /// you read once, not a pane you live in.
+        static let segments: [Tab] = [.home, .sessions, .savings]
     }
 
     var body: some View {
         VStack(spacing: 0) {
             Picker("", selection: $tab) {
-                ForEach(Tab.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(Tab.segments) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -36,9 +40,9 @@ struct RootView: View {
             ScrollView {
                 Group {
                     switch tab {
-                    case .today:    TodayView(engine: engine)
-                    case .activity: ActivityView(engine: engine)
-                    case .insights: InsightsView(engine: engine)
+                    case .home:     HomeView(engine: engine) { tab = .savings }
+                    case .sessions: SessionsView(engine: engine)
+                    case .savings:  InsightsView(engine: engine)
                     case .method:   MethodologyView(engine: engine)
                     }
                 }
@@ -50,7 +54,7 @@ struct RootView: View {
             .frame(maxHeight: .infinity)
 
             Divider()
-            FooterView(engine: engine)
+            FooterView(engine: engine, tab: $tab)
         }
         // A fully definite size, both axes. MenuBarExtra's popover proposes its
         // own height during layout, and anything flexible here (a ScrollView
@@ -84,6 +88,8 @@ enum LayoutProbe {
 
 struct FooterView: View {
     @ObservedObject var engine: UsageEngine
+    @Binding var tab: RootView.Tab
+    @AppStorage("menuBarMetric") private var metric = MenuBarMetric.energy
 
     var body: some View {
         HStack(spacing: 8) {
@@ -94,9 +100,20 @@ struct FooterView: View {
                     .font(.caption2).foregroundStyle(.secondary)
             }
             Spacer()
+            // Toggles what the menu bar item displays — cost or energy. The icon
+            // shows what's on the bar now; clicking swaps to the other.
+            Button {
+                metric = metric == .energy ? .cost : .energy
+            } label: {
+                Image(systemName: metric == .energy ? "bolt.fill" : "dollarsign")
+            }
+            .help("Menu bar shows \(metric == .energy ? "energy" : "cost") — click to show \(metric == .energy ? "cost" : "energy")")
             Button("Refresh") { Task { await engine.refresh() } }
                 .disabled(engine.isRefreshing)
             Button("Quit") { NSApplication.shared.terminate(nil) }
+            Button(tab == .method ? "Done" : "Method") {
+                tab = tab == .method ? .home : .method
+            }
         }
         .buttonStyle(.borderless)
         .font(.caption)

@@ -41,17 +41,21 @@ enum Render {
                 lastUsd = usd
                 // Snapshot each window so the headline can be eyeballed too.
                 UserDefaults.standard.set(window, forKey: "historyDays")
-                try snap(TodayView(engine: engine), "content-history-\(window)d", out)
+                try snap(HomeView(engine: engine), "content-home-\(window)d", out)
             }
             UserDefaults.standard.set(14, forKey: "historyDays")
 
             // Panes on their own: verifies the CONTENT is right. ImageRenderer
             // cannot rasterize a ScrollView's children, so this has to bypass
             // RootView's scroll container to show anything at all.
-            try snap(TodayView(engine: engine), "content-history", out)
-            try snap(ActivityView(engine: engine), "content-activity", out)
-            try snap(InsightsView(engine: engine), "content-insights", out)
+            try snap(HomeView(engine: engine), "content-home", out)
+            try snap(SessionsView(engine: engine), "content-sessions", out)
+            try snap(InsightsView(engine: engine), "content-savings", out)
             try snap(MethodologyView(engine: engine), "content-method", out)
+
+            // The only part of the app that sits next to Apple's own status
+            // items, so its size and alignment are judged against them.
+            try snap(MenuBarLabel(engine: engine), "menubar-label", out, width: nil)
 
             // Render the WHOLE RootView at its natural size, with no frame
             // imposed — this is what MenuBarExtra does, and rendering only the

@@ -41,6 +41,7 @@ final class UsageEngine: ObservableObject {
         var version = -1
         var factor = Double.nan
         var insights: InsightsResult?
+        var liveRecs: [Recommendation]?
         var sessions400: [SessionSummary]?
         var dailyByDays: [Int: [DaySummary]] = [:]
     }
@@ -364,6 +365,48 @@ final class UsageEngine: ObservableObject {
         cache.insights = result
         derived = cache
         return result
+    }
+
+    /// The same analysis run over today alone.
+    ///
+    /// The Savings pane answers "what should I change about how I work", from
+    /// the whole corpus. This answers a different question — "is what I'm doing
+    /// right now costing me" — and the whole-corpus recommendations can't: a
+    /// habit you fixed last week still dominates a 90-day ranking, and the
+    /// session burning money this afternoon is a rounding error against it.
+    ///
+    /// Thresholds inside the recommender are absolute dollars, so on a quiet
+    /// day this correctly returns nothing rather than manufacturing advice.
+    func liveRecommendations() -> [Recommendation] {
+        var cache = freshCache()
+        if let r = cache.liveRecs { return r }
+
+        let start = Calendar.current.startOfDay(for: Date())
+        let today = records(since: start)
+        let recs = today.isEmpty ? [] : Recommender.build(
+            records: today,
+            estimator: estimator,
+            sessions: recentSessions(limit: 100, since: start),
+            projects: byProject(today))
+            // Concentration and bare observations are orientation, not actions
+            // — "most of your spend is one project" is worth knowing once, not
+            // worth a slot in a two-item strip you glance at mid-task. The
+            // Savings pane still ranks them.
+            .filter { $0.kind != .concentration && $0.kind != .observation }
+
+        cache.liveRecs = recs
+        derived = cache
+        return recs
+    }
+
+    /// A stable fingerprint of today's actionable recommendations. Built from
+    /// their ids — which are identity-based (model / session / project), not the
+    /// dollar figures that drift through the day — so it only changes when a
+    /// genuinely different suggestion appears. The menu bar uses it to tell
+    /// advice the user hasn't opened the popover to see yet ("!") from advice
+    /// they already have.
+    func liveRecsSignature() -> String {
+        liveRecommendations().map(\.id).sorted().joined(separator: ",")
     }
 
     /// The full session list (used by Insights and, filtered, by Activity),

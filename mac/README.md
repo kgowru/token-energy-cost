@@ -19,10 +19,10 @@ its own premise.
 
 | Pane | |
 |---|---|
-| **History** | Day-by-day cost and energy over 14/30/90 days, today against your own daily average |
-| **Activity** | Recent sessions — project, branch, model, cost, and context size; hourly breakdown |
-| **Insights** | Ranked, quantified recommendations, each with its evidence and its caveat |
-| **Method** | Per-model baseline, every coefficient with its band and source, and the one slider that matters |
+| **Home** | Day-by-day cost and energy over 1/14/30/90 days and today against your own daily average, then the one or two things worth acting on — scoped to *today*, so it speaks to the work still running |
+| **Sessions** | Recent sessions — project, branch, model, cost, and context size; hourly breakdown |
+| **Savings** | The same recommender over your whole history: ranked, quantified changes to how you work, each with its evidence and its caveat |
+| **Method** | Per-model baseline, every coefficient with its band and source, and the one slider that matters. Reached from the link in the footer, not the tab bar — it's read once, not lived in |
 
 ## The honest caveat
 
@@ -147,6 +147,8 @@ Xcode reinstall to run the tests would be a bad trade.
 
 ## Not done
 
-Codex ingestion, notifications for unusually hot sessions, live grid carbon via
-Electricity Maps, and Developer ID signing + notarization. The bundle is
-ad-hoc signed, which is enough to run locally.
+Codex ingestion, notifications for unusually hot sessions, and live grid carbon
+via Electricity Maps.
+
+Release builds are Developer ID signed and notarized (see `RELEASING.md`);
+`build-app.sh` still ad-hoc signs for fast local iteration.

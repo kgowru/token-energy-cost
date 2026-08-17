@@ -2,8 +2,10 @@ import SwiftUI
 
 /// What's actually running: recent sessions, what they cost, and when the day's
 /// work happened. This is the "where did that number come from" view.
-struct ActivityView: View {
+struct SessionsView: View {
     @ObservedObject var engine: UsageEngine
+    // Key kept as-is through the rename — changing it would silently reset the
+    // scope on every install that had already chosen one.
     @AppStorage("activityScope") private var scopeDays = 1
 
     var body: some View {

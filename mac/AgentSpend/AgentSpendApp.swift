@@ -84,15 +84,44 @@ final class EngineBox: ObservableObject {
 struct MenuBarLabel: View {
     @ObservedObject var engine: UsageEngine
     @AppStorage("menuBarMetric") private var metric = MenuBarMetric.energy
+    /// The recommendation set the user last saw by opening the popover. The "!"
+    /// shows only while today's advice differs from it, so glancing at the menu
+    /// clears the flag until something genuinely new turns up.
+    @AppStorage("seenRecsSignature") private var seenRecs = ""
 
     var body: some View {
         let today = engine.records(since: Calendar.current.startOfDay(for: Date()))
+        // A warning "!" when there's actionable advice for today the user hasn't
+        // opened the popover to see yet — the same recommendations the Home and
+        // Savings strips surface. Cleared once seen (see RootView.onAppear).
+        let sig = engine.liveRecsSignature()
+        let hasRecs = !sig.isEmpty && sig != seenRecs
         HStack(spacing: 3) {
-            Image(systemName: "bolt.fill")
-            Text(metric == .energy
-                 ? Format.wh(engine.totalWattHours(today))
-                 : Format.usd(engine.totalCost(today)))
+            // `.small` brings the bolt to ~18px against the text's 16px so it
+            // doesn't overshoot the digits. The alignment guide below is what
+            // actually centers the two: digits have no descenders, so their ink
+            // sits high in the line box and frame-centering leaves the bolt
+            // reading low. Pinning the bolt's center to the text's *cap* center
+            // (baseline − capHeight/2) lines their optical middles up.
+            Image(systemName: "bolt.fill").imageScale(.small)
+                .alignmentGuide(VerticalAlignment.center) { d in d[VerticalAlignment.center] }
+            // The recommendations indicator is a "!" baked into the number's own
+            // glyph run, not a second view: MenuBarExtra renders its label as a
+            // single monochrome template image where only the first Image
+            // survives, so a separate/colored badge would vanish or drop the bolt.
+            Text((metric == .energy
+                  ? Format.wh(engine.totalWattHours(today))
+                  : Format.usd(engine.totalCost(today)))
+                 + (hasRecs ? " !" : ""))
+                .alignmentGuide(VerticalAlignment.center) { d in
+                    // Optical center of the digits: half the cap height above
+                    // the baseline, rather than the full line box's middle.
+                    d[.firstTextBaseline] - NSFont.menuBarFont(ofSize: 11).capHeight / 2
+                }
         }
+        // The menu bar font, at the size AppKit renders the battery percentage
+        // at — the default (13pt) is a quarter taller than everything beside it.
+        .font(Font(NSFont.menuBarFont(ofSize: 11)))
     }
 }
 

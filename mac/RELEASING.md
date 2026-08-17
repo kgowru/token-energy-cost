@@ -1,18 +1,19 @@
 # Releasing AgentSpend publicly
 
-The one hard requirement is **notarization** — without it, everyone who
-downloads the app hits Gatekeeper and most bounce. Notarization needs an
-**Apple Developer Program** membership: **$99/year**. That's the only cost.
-Everything else (notarization itself, hosting, Homebrew) is free.
+The signing + notarization gate is **already set up** — the project has a
+**Developer ID Application** certificate (Kapil Gowru, team `B47QPRK3YN`) and a
+stored `notarytool` credential profile named `AgentSpend`. Cutting a release is
+now a single command; the sections below are the standing process, not a to-do
+list. (The only recurring cost is the **Apple Developer Program**, $99/year;
+notarization, GitHub hosting, and Homebrew are all free.)
 
-## The recommended path
+## The path
 
-Your audience is Claude Code users — i.e. developers. That points to:
+The audience is Claude Code users — i.e. developers. That points to:
 
-1. **Open-source it on GitHub.** Fits the app's whole ethos (the logic is meant
-   to be readable and checkable), lets developers build it themselves, and is
-   the cheapest way to reach this audience. Needs a `LICENSE` (MIT or Apache-2.0
-   are the usual picks).
+1. **Open-source on GitHub.** Done — the repo is public and MIT-licensed. Fits
+   the app's whole ethos (the logic is meant to be readable and checkable) and
+   lets developers build it themselves.
 2. **Ship a notarized `.dmg` on GitHub Releases** for people who just want to
    download and run. `notarize.sh` (in this folder) produces it.
 3. **Optionally add a Homebrew cask** so `brew install --cask agentspend`
@@ -21,32 +22,50 @@ Your audience is Claude Code users — i.e. developers. That points to:
 
 ## What each step actually involves
 
-### 1. Apple Developer + notarization (the gate)
+### 1. Build the notarized DMG
 
-- Join at developer.apple.com → **$99/year**.
-- Create a **Developer ID Application** certificate (Xcode → Settings →
-  Accounts, or the developer portal), installed in your login keychain.
-- Store notarization credentials once:
-  ```
-  xcrun notarytool store-credentials "AgentSpend" \
-    --apple-id "you@example.com" --team-id "YOURTEAMID" \
-    --password "app-specific-password"    # make one at appleid.apple.com
-  ```
-- Then every release is one command:
-  ```
-  DEVID="Developer ID Application: Your Name (TEAMID)" ./notarize.sh
-  ```
-  It builds the universal app, signs it with the hardened runtime, packages a
-  `.dmg`, submits to Apple's notary service, and staples the ticket so it
-  verifies offline. Output: `build/AgentSpend.dmg`, ready to upload.
+The certificate and the `AgentSpend` credential profile are already in the login
+keychain, so a release is one command:
+
+```
+DEVID="Developer ID Application: Kapil Gowru (B47QPRK3YN)" ./notarize.sh
+```
+
+It builds the universal app, signs it with the hardened runtime, packages a
+`.dmg`, submits to Apple's notary service, and staples the ticket so it verifies
+offline. Output: `build/AgentSpend.dmg`, ready to upload.
+
+Confirm it before uploading:
+
+```
+spctl -a -vvv -t exec build/AgentSpend.app   # expect: accepted, source=Notarized Developer ID
+xcrun stapler validate build/AgentSpend.dmg   # expect: The validate action worked!
+```
+
+**Re-doing the one-time setup** (new machine, expired cert): create a Developer
+ID Application certificate (Xcode → Settings → Accounts, or the developer
+portal) in the login keychain, then store the notary credential once —
+
+```
+xcrun notarytool store-credentials "AgentSpend" \
+  --apple-id "k.gowru@gmail.com" --team-id "B47QPRK3YN" \
+  --password "app-specific-password"    # make one at appleid.apple.com
+```
 
 ### 2. GitHub Releases
 
-- Create a public repo. **What's safe to publish:** the repo is already clean —
-  `build/`, the SQLite store, `.context/`, and any screenshots are gitignored,
-  so none of *your* usage data (project names, dollar amounts) would be
-  committed. Double-check with `git status` before the first push.
-- Tag a version, attach `AgentSpend.dmg` to the release.
+- The repo is `github.com/kgowru/token-energy-cost` (public). **What's safe to
+  publish:** it's clean — `build/`, the SQLite store, `.context/`, and any
+  screenshots are gitignored, so none of *your* usage data (project names,
+  dollar amounts) is committed. Re-check with `git status` before any push that
+  might add a screenshot.
+- Tag a version and attach the notarized DMG. From the **repo root** (the DMG
+  lives under `mac/`, the notes at root):
+  ```
+  git tag v0.1.0 && git push origin v0.1.0
+  gh release create v0.1.0 mac/build/AgentSpend.dmg \
+    --title "AgentSpend v0.1.0" --notes-file RELEASE_NOTES.md
+  ```
 
 ### 3. Homebrew cask (optional, developer-friendly)
 

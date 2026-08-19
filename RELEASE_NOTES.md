@@ -1,8 +1,14 @@
-## AgentSpend v0.1.0
+## AgentSpend v0.1.1
 
-First public release. A macOS menu bar app that turns your Claude Code token
-spend into two numbers — actual dollars and estimated watt-hours — read live
-from your local logs, entirely offline.
+The menu bar now leads with **cost** instead of energy.
+
+### What changed
+
+- The menu bar item shows today's dollar figure by default. The ⚡/$ button at
+  the bottom of the popover still swaps it back to watt-hours whenever you want.
+
+This only affects fresh installs. If you've ever used that toggle, AgentSpend
+keeps showing whichever metric you picked.
 
 ### Install
 
@@ -13,21 +19,14 @@ Apple, so it opens with no Gatekeeper warning. Universal binary (Apple Silicon
 
 Reads `~/.claude/projects`; it's empty until you've used Claude Code.
 
-### What's in it
-
-- **Home** — today's cost and energy, day-by-day history over 1/14/30/90 days,
-  and the one or two things worth acting on *today*.
-- **Sessions** — recent sessions with project, branch, model, cost, and context
-  size, plus an hourly breakdown.
-- **Savings** — the same analysis over your whole history: ranked, quantified
-  changes to how you work, each with its evidence and its caveat.
-- **Method** — every energy coefficient with its band and source, and the one
-  assumption that moves the total most, as a slider you can drag.
+Upgrading from v0.1.0: just replace the copy in Applications. Your history lives
+in the Claude Code logs rather than in the app, so there's nothing to migrate.
 
 ### The honest caveat
 
-The dollars are exact; the energy is a modelled estimate anchored to public,
-production-grade measurements and carrying a wide band. Use it for relative
-comparisons, not as a precise meter. The Method pane shows all the workings.
+Unchanged from v0.1.0 — the dollars are exact; the energy is a modelled estimate
+anchored to public, production-grade measurements and carrying a wide band. Use
+it for relative comparisons, not as a precise meter. The Method pane shows all
+the workings.
 
 Makes zero network calls. Independent project, not affiliated with Anthropic.

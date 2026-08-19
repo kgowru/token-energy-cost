@@ -89,7 +89,7 @@ enum LayoutProbe {
 struct FooterView: View {
     @ObservedObject var engine: UsageEngine
     @Binding var tab: RootView.Tab
-    @AppStorage("menuBarMetric") private var metric = MenuBarMetric.energy
+    @AppStorage("menuBarMetric") private var metric = MenuBarMetric.cost
 
     var body: some View {
         HStack(spacing: 8) {

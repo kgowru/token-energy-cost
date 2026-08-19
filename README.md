@@ -37,8 +37,9 @@ report power would undercut its own premise.
 That's it. The app is signed with an Apple Developer ID and notarized by Apple,
 so it opens without any Gatekeeper warning.
 
-It appears as a **⚡ menu bar item** showing today's energy — no Dock icon, no
-window. Click it for the panes below; quit from the bottom of the popover.
+It appears as a **⚡ menu bar item** showing today's cost — no Dock icon, no
+window. Click it for the panes below; the ⚡/$ button at the bottom of the
+popover swaps the menu bar between cost and energy. Quit from there too.
 
 ## What it shows
 

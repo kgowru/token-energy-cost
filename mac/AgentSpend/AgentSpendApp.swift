@@ -83,7 +83,7 @@ final class EngineBox: ObservableObject {
 /// by being glanceable.
 struct MenuBarLabel: View {
     @ObservedObject var engine: UsageEngine
-    @AppStorage("menuBarMetric") private var metric = MenuBarMetric.energy
+    @AppStorage("menuBarMetric") private var metric = MenuBarMetric.cost
     /// The recommendation set the user last saw by opening the popover. The "!"
     /// shows only while today's advice differs from it, so glancing at the menu
     /// clears the flag until something genuinely new turns up.

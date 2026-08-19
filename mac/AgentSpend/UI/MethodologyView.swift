@@ -7,7 +7,7 @@ import SwiftUI
 /// of the product surface.
 struct MethodologyView: View {
     @ObservedObject var engine: UsageEngine
-    @AppStorage("menuBarMetric") private var metric = MenuBarMetric.energy
+    @AppStorage("menuBarMetric") private var metric = MenuBarMetric.cost
 
     var body: some View {
         let all = engine.records

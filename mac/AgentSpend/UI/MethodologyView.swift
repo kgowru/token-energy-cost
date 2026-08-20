@@ -8,6 +8,7 @@ import SwiftUI
 struct MethodologyView: View {
     @ObservedObject var engine: UsageEngine
     @AppStorage("menuBarMetric") private var metric = MenuBarMetric.cost
+    @AppStorage("updateCheckEnabled") private var updateChecks = true
 
     var body: some View {
         let all = engine.records
@@ -91,10 +92,34 @@ struct MethodologyView: View {
             }
             .font(.caption)
 
+            // Disclosed here, in the pane that exists to say what the app does
+            // and doesn't know, because it is the app's only network call and a
+            // README claiming "no network calls" would otherwise be the only
+            // place a user could learn that changed.
+            VStack(alignment: .leading, spacing: 3) {
+                Toggle(isOn: $updateChecks) {
+                    Text("Check for new versions").font(.caption)
+                }
+                .controlSize(.small)
+                Text(Self.updateCheckNote)
+                    .font(.caption2).foregroundStyle(.tertiary)
+            }
+
             Text("Coefficients generated \(engine.energyModel.generated). These figures "
                  + "decay fast — Google reported a 33× energy reduction in 12 months.")
                 .font(.caption2).foregroundStyle(.tertiary)
         }
+    }
+
+    /// Built outside the view body: as one concatenated `Text` argument with an
+    /// optional interpolation on the end, the type checker gave up on it.
+    private static var updateCheckNote: String {
+        var s = "The only network call AgentSpend makes. Once a day it asks GitHub "
+              + "for the latest release number and shows a footer link if yours is "
+              + "older. It sends no identifier and no usage data, and never "
+              + "downloads or installs anything by itself."
+        if let v = UpdateChecker.currentVersion { s += " You're on \(v)." }
+        return s
     }
 
     @ViewBuilder

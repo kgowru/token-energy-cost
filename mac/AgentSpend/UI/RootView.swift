@@ -88,8 +88,12 @@ enum LayoutProbe {
 
 struct FooterView: View {
     @ObservedObject var engine: UsageEngine
+    @ObservedObject var updates = UpdateChecker.shared
     @Binding var tab: RootView.Tab
     @AppStorage("menuBarMetric") private var metric = MenuBarMetric.cost
+    /// Read here as well as in the checker so switching the setting off hides an
+    /// already-found update immediately, rather than at the next launch.
+    @AppStorage("updateCheckEnabled") private var updateChecks = true
 
     var body: some View {
         HStack(spacing: 8) {
@@ -100,6 +104,19 @@ struct FooterView: View {
                     .font(.caption2).foregroundStyle(.secondary)
             }
             Spacer()
+            // Red, and only present when there's genuinely a newer release — the
+            // one place in this footer allowed to draw the eye. It can't live in
+            // the menu bar item instead: MenuBarExtra renders its label as a
+            // single monochrome template image (see MenuBarLabel), so color there
+            // is silently discarded.
+            if updateChecks, let update = updates.available {
+                Button {
+                    NSWorkspace.shared.open(update.url)
+                } label: {
+                    Text("New version available").foregroundStyle(.red)
+                }
+                .help("AgentSpend \(update.version) is available. Opens the release page.")
+            }
             // Toggles what the menu bar item displays — cost or energy. The icon
             // shows what's on the bar now; clicking swaps to the other.
             Button {
@@ -108,12 +125,17 @@ struct FooterView: View {
                 Image(systemName: metric == .energy ? "bolt.fill" : "dollarsign")
             }
             .help("Menu bar shows \(metric == .energy ? "energy" : "cost") — click to show \(metric == .energy ? "cost" : "energy")")
-            Button("Refresh") { Task { await engine.refresh() } }
-                .disabled(engine.isRefreshing)
-            Button("Quit") { NSApplication.shared.terminate(nil) }
+            // No Refresh button: the FSEvents watcher re-ingests within a couple
+            // of seconds of Claude Code writing, with a 60s full-rescan backstop,
+            // so the number is already current and the button only ever invited
+            // doubt about that. The "updated" timestamp on the left is the honest
+            // version of the same reassurance.
             Button(tab == .method ? "Done" : "Method") {
                 tab = tab == .method ? .home : .method
             }
+            // Last, hard right — the one irreversible action in the row, kept
+            // away from the things you click often.
+            Button("Quit") { NSApplication.shared.terminate(nil) }
         }
         .buttonStyle(.borderless)
         .font(.caption)

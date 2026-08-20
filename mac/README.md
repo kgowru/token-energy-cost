@@ -119,10 +119,37 @@ re-ingests only the changed files (not a full rescan), with a 60s timer as a
 backstop. A refresh bumps the data-version only when it actually merges new
 rows, so the memo survives no-op refreshes.
 
+## The one network call
+
+`Update/UpdateChecker.swift` asks the GitHub releases API once a day whether a
+tag newer than `CFBundleShortVersionString` exists, and `FooterView` shows a red
+"New version available" link if so. That's the whole feature: no download, no
+install, no Sparkle, no appcast, no second signing key — the user drags the new
+copy to Applications like they did the first one.
+
+Three things about it are load-bearing:
+
+- **The version comparison is numeric, not lexical**, or `0.1.10` sorts below
+  `0.1.9` and strands everyone on the tenth patch of a line. `--selftest` covers
+  both directions, because both failures are user-visible and neither
+  self-corrects: badge too eagerly and every install nags about a release it
+  already has; too shyly and nobody hears about the one they need.
+- **`mac/VERSION` is the only place the version is written.** It used to be typed
+  into the `Info.plist` heredoc in `build-app.sh`, which this feature turns into a
+  trap — see step 0 of `RELEASING.md`.
+- **The check is fired from `EngineBox`, not `RootView.onAppear`**, because
+  `--render` constructs `RootView` directly to snapshot the panes and the
+  snapshotter has to stay hermetic. Nothing but the real app reaches `EngineBox`.
+
+The badge can't live in the menu bar item instead: `MenuBarExtra` renders its
+label as a single monochrome template image, so color there is discarded (which
+is also why the recommendations indicator is a `"!"` baked into the number's
+glyph run — see `MenuBarLabel`).
+
 ## Verifying
 
 ```
-./.build/release/AgentSpend --selftest        # 61 assertions
+./.build/release/AgentSpend --selftest        # 74 assertions
 ./.build/release/AgentSpend --verify [root]   # aggregates, diffable vs the oracle
 ./.build/release/AgentSpend --render <dir>    # render each pane to PNG
 ./.build/release/AgentSpend --window [--tab method]   # views in a normal window

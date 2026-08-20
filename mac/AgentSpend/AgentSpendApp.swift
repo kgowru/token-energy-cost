@@ -73,6 +73,21 @@ final class EngineBox: ObservableObject {
                 await e.refresh()
                 e.startWatching()
             }
+            // Deliberately here and not in RootView.onAppear: `--render` builds
+            // RootView directly to snapshot the panes, and the snapshotter must
+            // stay hermetic. Nothing that isn't the real app reaches EngineBox.
+            //
+            // The loop matters because a menu bar app runs for weeks without a
+            // relaunch, and a launch-only check would go stale for exactly the
+            // users who never quit. Waking every six hours against a 24-hour
+            // throttle costs nothing measurable — a sleeping task is not a timer.
+            Task {
+                while !Task.isCancelled {
+                    await UpdateChecker.shared.checkIfDue()
+                    do { try await Task.sleep(for: .seconds(6 * 60 * 60)) }
+                    catch { break }   // cancelled; don't spin
+                }
+            }
         } catch {
             failure = String(describing: error)
         }

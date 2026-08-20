@@ -8,7 +8,7 @@
 
 So "switch to a cheaper model" becomes a decision you can put a number on, instead of a hunch.
 
-[Download](https://github.com/kgowru/token-energy-cost/releases/latest) · [Why I built it](content/blog/why-i-built-agentspend.md) · [The energy method](#how-much-to-trust-these-numbers)
+[Download](https://github.com/kgowru/agent-spend/releases/latest) · [Why I built it](content/blog/why-i-built-agentspend.md) · [The energy method](#how-much-to-trust-these-numbers)
 
 </div>
 
@@ -21,9 +21,9 @@ So "switch to a cheaper model" becomes a decision you can put a number on, inste
 ## What it is
 
 AgentSpend reads Claude Code's own local logs at `~/.claude/projects` and shows
-what your usage costs, in money and in estimated electricity. It runs entirely
-on your Mac: **no API keys, no account, no network calls.** It picks up your
-usage automatically and updates while you work.
+what your usage costs, in money and in modelled electricity. It runs entirely
+on your Mac: **no API keys, no account, no telemetry.** It picks up your usage
+automatically and updates while you work.
 
 Native Swift, zero external dependencies (SQLite comes from the system). A ~1 MB
 universal binary that sits at 0% CPU when idle. A tool that burns power to
@@ -31,7 +31,7 @@ report power would be a bad joke.
 
 ## Install
 
-1. Download **`AgentSpend.dmg`** from the [latest release](https://github.com/kgowru/token-energy-cost/releases/latest).
+1. Download **`AgentSpend.dmg`** from the [latest release](https://github.com/kgowru/agent-spend/releases/latest).
 2. Open it, drag **AgentSpend** into **Applications**, and launch it.
 
 That's it. The app is signed with an Apple Developer ID and notarized by Apple,
@@ -79,7 +79,7 @@ open build/AgentSpend.app
 Checks you can run:
 
 ```bash
-./.build/release/AgentSpend --selftest   # 61 assertions
+./.build/release/AgentSpend --selftest   # 74 assertions
 ./.build/release/AgentSpend --verify     # aggregates, diffable against the Python oracle
 ./.build/release/AgentSpend --render <dir>   # render each pane to PNG
 ./.build/release/AgentSpend --window     # the panes in an ordinary window
@@ -100,9 +100,17 @@ This is a monorepo:
 
 ## Privacy
 
-AgentSpend makes **zero network calls**. It reads only your local Claude Code
-logs and writes a small local database at
-`~/Library/Application Support/AgentSpend/`. Nothing leaves your machine.
+**Nothing about you leaves your machine.** AgentSpend reads only your local
+Claude Code logs and writes a small local database at
+`~/Library/Application Support/AgentSpend/`. There is no telemetry, no
+analytics, and no account.
+
+It makes one network call. Once a day it asks the GitHub releases API for the
+latest version number, and shows a link in the footer if yours is older. That
+request sends no identifier and no usage data, so it can tell that somebody
+checked but not who, or what they spent. It never downloads or installs
+anything by itself. Switch it off with **Check for new versions** in the Method
+pane and the app makes no network calls at all.
 
 ## Not affiliated with Anthropic
 

@@ -9,6 +9,20 @@ cd "$(dirname "$0")"
 CONFIG="${1:-release}"
 APP="build/AgentSpend.app"
 
+# The single source of truth for the marketing version. It used to be typed
+# directly into the Info.plist below, which the update checker turns into a
+# hazard: the shipped app compares its own CFBundleShortVersionString against the
+# latest GitHub tag, so forgetting to bump it here while tagging v0.1.2 makes
+# every install show a "New version available" badge that upgrading never
+# clears. One file, read by the build and by `git tag` (see RELEASING.md).
+VERSION="$(tr -d ' \n' < VERSION)"
+# CFBundleVersion only has to be monotonic, so derive it instead of keeping a
+# second number in sync by hand. Outside a git checkout the count is unavailable
+# and any placeholder will do — only release builds, which are cut from the
+# repo, need the ordering to hold.
+BUILD="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
+echo "version $VERSION (build $BUILD)"
+
 swift build -c "$CONFIG"
 # --show-bin-path can interleave build chatter on stdout; take the last line and
 # check it, otherwise a contaminated path silently yields a binary-less bundle.
@@ -34,7 +48,9 @@ cp AgentSpend/Resources/energy-model.json AgentSpend/Resources/pricing.json \
    assets/AgentSpend.icns \
    "$APP/Contents/Resources/"
 
-cat > "$APP/Contents/Info.plist" <<'PLIST'
+# Unquoted heredoc: the version fields below interpolate. Nothing else in this
+# plist contains a `$` or a backtick, so expansion is safe.
+cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -45,8 +61,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleExecutable</key>      <string>AgentSpend</string>
   <key>CFBundleIconFile</key>        <string>AgentSpend</string>
   <key>CFBundlePackageType</key>     <string>APPL</string>
-  <key>CFBundleShortVersionString</key> <string>0.1.1</string>
-  <key>CFBundleVersion</key>         <string>2</string>
+  <key>CFBundleShortVersionString</key> <string>${VERSION}</string>
+  <key>CFBundleVersion</key>         <string>${BUILD}</string>
   <key>LSMinimumSystemVersion</key>  <string>14.0</string>
   <!-- Menu bar only: no Dock icon, no main window. -->
   <key>LSUIElement</key>             <true/>

@@ -81,6 +81,7 @@ struct SelfTest {
             try incremental()
             try store()
             try estimator(energy, pricing)
+            versionCompare()
         } catch {
             failures.append("threw: \(error)")
         }
@@ -96,6 +97,31 @@ struct SelfTest {
     }
 
     // MARK: - Cases
+
+    /// The update badge is only ever as trustworthy as this comparison. Both
+    /// failure directions are user-visible and neither is self-correcting: too
+    /// eager and every install nags forever about a release it already has, too
+    /// shy and nobody hears about the one they need.
+    private mutating func versionCompare() {
+        let isNewer = UpdateChecker.isNewer
+        ok(isNewer("0.1.2", "0.1.1"), "patch bump is newer")
+        ok(isNewer("0.2.0", "0.1.9"), "minor bump beats a higher patch")
+        ok(isNewer("1.0.0", "0.9.9"), "major bump")
+        // The reason this isn't a string compare: "0.1.10" < "0.1.9" lexically.
+        ok(isNewer("0.1.10", "0.1.9"), "double-digit patch beats single digit")
+        ok(!isNewer("0.1.1", "0.1.1"), "same version is not newer")
+        ok(!isNewer("0.1.0", "0.1.1"), "older release does not badge")
+        // A shipped 0.1.1 must not badge against a tag of 0.1 or 0.1.0.
+        ok(!isNewer("0.1", "0.1.1"), "shorter equal-prefix tag is not newer")
+        ok(!isNewer("0.1.0", "0.1"), "trailing zero is not a new version")
+        // Tags carry a leading v; the plist value does not.
+        eq(UpdateChecker.normalize("v0.1.1"), "0.1.1", "v prefix stripped")
+        eq(UpdateChecker.normalize(" v0.1.1\n"), "0.1.1", "tag whitespace trimmed")
+        ok(isNewer(UpdateChecker.normalize("v0.1.2"), "0.1.1"), "tag vs plist end to end")
+        // Garbage from a renamed tag should read as "no update", never crash.
+        ok(!isNewer("", "0.1.1"), "empty tag does not badge")
+        ok(!isNewer("banana", "0.1.1"), "unparseable tag does not badge")
+    }
 
     private mutating func modelIDs() throws {
         eq(ModelID.normalize("claude-haiku-4-5-20251001"), "claude-haiku-4-5",

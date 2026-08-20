@@ -24,16 +24,16 @@ struct InsightsView: View {
 
         VStack(alignment: .leading, spacing: 14) {
             if recs.isEmpty {
-                Text("Nothing worth changing yet — not enough history.")
+                Text("Nothing worth changing yet. Not enough history.")
                     .font(.caption).foregroundStyle(.secondary)
             } else {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Identified savings").font(.caption).foregroundStyle(.secondary)
+                    Text("Possible savings").font(.caption).foregroundStyle(.secondary)
                     Text("up to \(Format.usd(headline))")
                         .font(.system(size: 26, weight: .medium, design: .rounded))
                         .monospacedDigit().foregroundStyle(.green)
                     Text("against \(Format.usd(totalUsd)) spent to date")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(.secondary)
                 }
 
                 // Anchor the abstract kWh to something physical.
@@ -42,12 +42,12 @@ struct InsightsView: View {
                     Text(Format.wh(result.totalWh))
                         .font(.system(.title3, design: .rounded)).monospacedDigit()
                     Text(Format.homeEnergy(result.totalWh, engine.energyModel.equivalences))
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(.secondary)
                 }
 
                 // Says out loud what separates this from Home's strip, so two
                 // panes ranking the same recommender don't read as a bug.
-                Text("Ranked across your whole history — the patterns, not today.")
+                Text("Ranked across your whole history: the patterns, not today.")
                     .font(.caption).foregroundStyle(.secondary)
 
                 ForEach(Array(recs.enumerated()), id: \.element.id) { i, r in
@@ -78,10 +78,10 @@ struct InsightsView: View {
                     }
                     .font(.caption).monospacedDigit()
                 }
-                Text("A ceiling, not a plan — nobody should run everything on one "
+                Text("A ceiling, not a plan. Nobody should run everything on one "
                      + "model. It holds turn count fixed, and a weaker model that "
                      + "needs more turns gives the saving back.")
-                    .font(.caption2).foregroundStyle(.tertiary)
+                    .font(.caption2).foregroundStyle(.secondary)
             }
         }
         .onAppear { seenRecs = engine.liveRecsSignature() }
@@ -123,14 +123,14 @@ struct RecommendationCard: View {
                             .font(.system(size: 8))
                         Text(expanded ? "caveat" : "caveat")
                     }
-                    .font(.caption2).foregroundStyle(.tertiary)
+                    .font(.caption2).foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
                 .padding(.leading, 18)
 
                 if expanded {
                     Text(caveat)
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.leading, 18)
                 }

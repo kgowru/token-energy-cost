@@ -107,7 +107,7 @@ struct FooterView: View {
             } label: {
                 Image(systemName: metric == .energy ? "bolt.fill" : "dollarsign")
             }
-            .help("Menu bar shows \(metric == .energy ? "energy" : "cost") — click to show \(metric == .energy ? "cost" : "energy")")
+            .help("Menu bar shows \(metric == .energy ? "energy" : "cost"). Click to show \(metric == .energy ? "cost" : "energy")")
             Button("Refresh") { Task { await engine.refresh() } }
                 .disabled(engine.isRefreshing)
             Button("Quit") { NSApplication.shared.terminate(nil) }

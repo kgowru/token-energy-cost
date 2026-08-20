@@ -1,6 +1,6 @@
 # Releasing AgentSpend publicly
 
-The signing + notarization gate is **already set up** — the project has a
+The signing + notarization gate is **already set up**: the project has a
 **Developer ID Application** certificate (Kapil Gowru, team `B47QPRK3YN`) and a
 stored `notarytool` credential profile named `AgentSpend`. Cutting a release is
 now a single command; the sections below are the standing process, not a to-do
@@ -9,9 +9,9 @@ notarization, GitHub hosting, and Homebrew are all free.)
 
 ## The path
 
-The audience is Claude Code users — i.e. developers. That points to:
+The audience is Claude Code users, i.e. developers. That points to:
 
-1. **Open-source on GitHub.** Done — the repo is public and MIT-licensed. Fits
+1. **Open-source on GitHub.** Done: the repo is public and MIT-licensed. Fits
    the app's whole ethos (the logic is meant to be readable and checkable) and
    lets developers build it themselves.
 2. **Ship a notarized `.dmg` on GitHub Releases** for people who just want to
@@ -44,7 +44,7 @@ xcrun stapler validate build/AgentSpend.dmg   # expect: The validate action work
 
 **Re-doing the one-time setup** (new machine, expired cert): create a Developer
 ID Application certificate (Xcode → Settings → Accounts, or the developer
-portal) in the login keychain, then store the notary credential once —
+portal) in the login keychain, then store the notary credential once:
 
 ```
 xcrun notarytool store-credentials "AgentSpend" \
@@ -55,7 +55,7 @@ xcrun notarytool store-credentials "AgentSpend" \
 ### 2. GitHub Releases
 
 - The repo is `github.com/kgowru/token-energy-cost` (public). **What's safe to
-  publish:** it's clean — `build/`, the SQLite store, `.context/`, and any
+  publish:** it's clean. `build/`, the SQLite store, `.context/`, and any
   screenshots are gitignored, so none of *your* usage data (project names,
   dollar amounts) is committed. Re-check with `git status` before any push that
   might add a screenshot.
@@ -76,19 +76,19 @@ xcrun notarytool store-credentials "AgentSpend" \
 ## Not recommended: the Mac App Store
 
 The App Store requires **sandboxing**, and a sandboxed app **cannot read
-`~/.claude/projects`** — the exact thing this app depends on — without the user
+`~/.claude/projects`** (the exact thing this app depends on) without the user
 manually granting folder access via a security-scoped bookmark on every launch,
 plus App Review overhead and a different certificate. The direct-download +
 Homebrew route avoids all of that. Skip the App Store unless you specifically
 want its discovery.
 
-## Things a public release will get asked about — and where you stand
+## Things a public release will get asked about, and where you stand
 
 - **"Are the energy numbers real?"** They're *estimates*, and the app is already
-  built to say so — the Method tab shows every coefficient, its band, and its
+  built to say so. The Method tab shows every coefficient, its band, and its
   sources, and the app leads with exact **cost** and *relative* comparisons. Own
   this in the README; it's a strength, not a liability. Lead with "estimated."
-- **"Does it phone home?"** No — zero network calls, everything is local. Say
+- **"Does it phone home?"** No. Zero network calls, everything is local. Say
   this loudly; it's a real selling point.
 - **Affiliation.** It reads Claude Code's logs but isn't affiliated with
   Anthropic. Don't use Claude/Anthropic logos; add a one-line "not affiliated"
@@ -97,7 +97,7 @@ want its discovery.
 ## The real maintenance cost
 
 Anthropic ships new models and changes prices. Today a brand-new model shows a
-loud "no coefficients — counted as zero" banner until you update
+loud "no coefficients, counted as zero" banner until you update
 `pricing.json` / `energy-model.json` and cut a new release. Two ways to soften
 this before a public launch (ask me to build either):
 
@@ -105,11 +105,11 @@ this before a public launch (ask me to build either):
   frontier-large, etc.) and label the estimate "assumed," instead of zero.
 - **Remote coefficients:** fetch the two JSON files from a URL at launch so you
   can update pricing without shipping an app update. (This adds the app's first
-  network call — weigh it against the "100% local" promise.)
+  network call. Weigh it against the "100% local" promise.)
 
 ## Nice-to-have later
 
 - **Auto-update** via [Sparkle](https://sparkle-project.org) (appcast + EdDSA
   signing). Standard for Mac apps outside the App Store; adds one dependency.
-- **A landing page** (even just the README with screenshots) and an app icon —
-  right now the menu bar uses an SF Symbol and there's no `.icns`.
+- **A landing page** (even just the README with screenshots) and an app icon.
+  Right now the menu bar uses an SF Symbol and there's no `.icns`.

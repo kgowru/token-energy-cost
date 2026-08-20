@@ -11,9 +11,9 @@ struct TodayView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             if !engine.unrecognizedModels.isEmpty {
-                Banner(text: "No coefficients for "
+                Banner(text: "No price or energy figures yet for "
                        + engine.unrecognizedModels.sorted().joined(separator: ", ")
-                       + " — those requests count as zero.")
+                       + ", so those requests count as zero.")
             }
 
             // Selector first: the headline below is the total for whichever
@@ -65,7 +65,7 @@ struct TodayView: View {
                 Text("\(Format.wh(today?.wh ?? 0)) · \(today?.requests ?? 0) requests")
                     .font(.caption2).foregroundStyle(.secondary)
                 Text(Format.homeEnergy(today?.wh ?? 0, engine.energyModel.equivalences))
-                    .font(.caption2).foregroundStyle(.tertiary)
+                    .font(.caption2).foregroundStyle(.secondary)
             }
             Spacer()
             if typical > 0, let t = today, t.requests > 0 {
@@ -154,7 +154,7 @@ struct TodayView: View {
                      + "\(Format.count(summaries.reduce(0) { $0 + $1.requests })) requests")
                     .font(.caption2).foregroundStyle(.secondary)
                 Text(Format.homeEnergy(periodWh, engine.energyModel.equivalences))
-                    .font(.caption2).foregroundStyle(.tertiary)
+                    .font(.caption2).foregroundStyle(.secondary)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {

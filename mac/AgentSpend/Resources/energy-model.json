@@ -3,7 +3,7 @@
   "generated": "2026-07-27",
   "unit": "watt_hours_per_1000_tokens",
   "boundary": "full-datacenter",
-  "boundaryNote": "Includes accelerator, host CPU/DRAM, network/storage, and facility PUE. GPU-only accounting would be ~2.4x lower — Google's own comparison of the two boundaries.",
+  "boundaryNote": "Includes accelerator, host CPU/DRAM, network/storage, and facility PUE. GPU-only accounting would be ~2.4x lower, per Google's own comparison of the two boundaries.",
 
   "headline": {
     "claim": "These are modeled estimates, not measurements.",
@@ -90,14 +90,14 @@
     "Serving configuration swings measured results ~100x. Batch size and utilization dominate model choice.",
     "Boundary is full-datacenter, not GPU-only. The two differ by ~2.4x.",
     "Medians are not means. The distribution is heavily right-skewed; a long-context or reasoning-heavy request can be 10-100x the median.",
-    "Context length is not free. The same 500-token output costs ~0.3 Wh at short context and ~40 Wh at 100k input, because prefill attention is O(n^2) and every decode step re-reads a growing KV cache.",
+    "Context length is not free. The same 500-token output costs ~0.3 Wh at short context and ~40 Wh at 100k input, because every turn re-reads the whole prompt and the work grows faster than the prompt does.",
     "Excludes model training energy entirely.",
     "This electricity was consumed in a datacenter, not on your machine.",
     "Figures decay fast. Google reported a 33x energy reduction in 12 months. Everything here is timestamped."
   ],
 
   "equivalences": {
-    "note": "EPA/DOE-verified factors. usHomeKwhPerDay is the primary anchor used in the UI — at tens-to-hundreds of kWh, a home is the only relatable frame (a phone charge or kettle would be thousands of units). The other factors are kept as sourced reference. Deliberately excludes the debunked '0.3 Wh per Google search' (2009, ~17 years stale) and '4.6 t CO2/vehicle/year' (EPA's current figure is 4.29 t) zombie stats.",
+    "note": "EPA/DOE-verified factors. usHomeKwhPerDay is the primary anchor used in the UI. At tens-to-hundreds of kWh, a home is the only relatable frame (a phone charge or kettle would be thousands of units). The other factors are kept as sourced reference. Deliberately excludes the debunked '0.3 Wh per Google search' (2009, ~17 years stale) and '4.6 t CO2/vehicle/year' (EPA's current figure is 4.29 t) zombie stats.",
     "usHomeKwhPerDay": 29.0,
     "usHomeNote": "Average US residential customer ~10,500 kWh/yr = ~28.8 kWh/day (EIA). Rounded to 29. A comparison, not a claim about any specific home.",
     "ledBulbWatts": 9,

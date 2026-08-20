@@ -73,9 +73,9 @@ enum Recommender {
                 evidence: "\(short(model)) cost you \(Format.usd(e.usd)) across "
                     + "\(e.requests) requests. The same tokens on \(short(peer)) "
                     + "would be \(Format.usd(swapped)).",
-                caveat: "\(short(model)) is the more capable model — this is worth it "
-                    + "for hard, long-horizon work. The saving only applies to the "
-                    + "portion that didn't need it, which the logs can't tell apart.",
+                caveat: "\(short(model)) is the more capable model, and worth it for "
+                    + "hard, long-horizon work. The saving only applies to the portion "
+                    + "that didn't need it, which the logs can't tell apart.",
                 savingUsd: saving,
                 weight: saving))
         }
@@ -98,9 +98,10 @@ enum Recommender {
                     + " of your spend (\(Format.usd(largeUsd))) is on top-tier models. "
                     + "Sonnet 5 is roughly half the energy and a third of the price "
                     + "per token.",
-                caveat: "Estimated on shifting a quarter of that work — a rough figure, "
-                    + "not a measurement. A weaker model needing extra turns can erase "
-                    + "the saving, so change the default and watch, don't switch blind.",
+                caveat: "Estimated on shifting a quarter of that work. That's a rough "
+                    + "figure, not a measurement. A weaker model needing extra turns can "
+                    + "erase the saving, so change the default and watch, don't switch "
+                    + "blind.",
                 savingUsd: quarter,
                 weight: quarter))
         }
@@ -123,7 +124,7 @@ enum Recommender {
                     + "\(Format.tokens(worst.totals.cacheRead)) read), against "
                     + "\(churnBaseline(sessions)) typical for your sessions.",
                 caveat: "Repeated cache writes usually mean something early in the "
-                    + "prompt keeps changing — a timestamp, a reordered tool list, a "
+                    + "prompt keeps changing: a timestamp, a reordered tool list, a "
                     + "varying system prompt. Worth a look, but the fix depends on the "
                     + "harness, not the model.",
                 savingUsd: wasted > 0.5 ? wasted : nil,
@@ -150,10 +151,10 @@ enum Recommender {
                     + "\(Format.tokens(median)) median across your sessions. "
                     + "\(longCtx.count) session"
                     + (longCtx.count == 1 ? "" : "s") + " ran this long.",
-                caveat: "Context cost is superlinear — prefill attention is O(n²) and "
-                    + "every decode step re-reads a growing KV cache — so the last "
-                    + "turns of a long session cost far more than the first. Starting "
-                    + "fresh when the task changes is usually cheaper than compacting.",
+                caveat: "Long sessions get more expensive per turn as they go, because "
+                    + "every turn re-reads a bigger prompt than the last. The end of a "
+                    + "long session costs far more than the start. Starting fresh when "
+                    + "the task changes is usually cheaper than compacting.",
                 savingUsd: nil,
                 weight: worst.usd * 0.15))
         }
@@ -164,7 +165,7 @@ enum Recommender {
             out.append(Recommendation(
                 id: "concentration-\(top.project)",
                 kind: .concentration,
-                title: "Most of your spend is one project — \(top.project)",
+                title: "Most of your spend is one project: \(top.project)",
                 evidence: "\(Format.usd(top.usd)) of \(Format.usd(totalUsd)) "
                     + "(\(Format.percent(top.usd / totalUsd, places: 0))) and "
                     + "\(Format.wh(top.wh)).",
@@ -179,7 +180,7 @@ enum Recommender {
 
     private static func churnBaseline(_ sessions: [UsageEngine.SessionSummary]) -> String {
         let vals = sessions.map(\.totals.cacheEfficiency).sorted()
-        guard !vals.isEmpty else { return "—" }
+        guard !vals.isEmpty else { return "n/a" }
         return Format.percent(vals[vals.count / 2], places: 0)
     }
 

@@ -22,9 +22,9 @@ struct HomeView: View {
 
             // Applies to every figure above, so it belongs at the end of the
             // pane rather than in the middle of it.
-            Text("Cost is exact, from published rates. Energy is a modelled estimate "
-                 + "and was consumed in a datacenter, not on your Mac.")
-                .font(.caption2).foregroundStyle(.tertiary)
+            Text("Cost is measured from published rates. Energy is a modelled estimate "
+                 + "of consumption at a datacenter.")
+                .font(.caption2).foregroundStyle(.secondary)
         }
     }
 }
@@ -62,7 +62,7 @@ struct LiveSavings: View {
                 // A quiet day is a real answer. Inventing advice from a handful
                 // of requests would make the strip noise you learn to skip.
                 Text("Nothing worth flagging in today's usage.")
-                    .font(.caption).foregroundStyle(.tertiary)
+                    .font(.caption).foregroundStyle(.secondary)
             } else {
                 ForEach(recs) { LiveSavingsRow(rec: $0) }
             }

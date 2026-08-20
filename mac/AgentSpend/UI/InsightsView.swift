@@ -29,10 +29,10 @@ struct InsightsView: View {
             } else {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Possible savings").font(.caption).foregroundStyle(.secondary)
-                    Text("up to \(Format.usd(headline))")
+                    Text(Format.usd(headline))
                         .font(.system(size: 26, weight: .medium, design: .rounded))
                         .monospacedDigit().foregroundStyle(.green)
-                    Text("against \(Format.usd(totalUsd)) spent to date")
+                    Text("\(Format.usd(totalUsd)) spent to date")
                         .font(.caption2).foregroundStyle(.secondary)
                 }
 
@@ -44,11 +44,6 @@ struct InsightsView: View {
                     Text(Format.homeEnergy(result.totalWh, engine.energyModel.equivalences))
                         .font(.caption2).foregroundStyle(.secondary)
                 }
-
-                // Says out loud what separates this from Home's strip, so two
-                // panes ranking the same recommender don't read as a bug.
-                Text("Ranked across your whole history: the patterns, not today.")
-                    .font(.caption).foregroundStyle(.secondary)
 
                 ForEach(Array(recs.enumerated()), id: \.element.id) { i, r in
                     RecommendationCard(rank: i + 1, rec: r)

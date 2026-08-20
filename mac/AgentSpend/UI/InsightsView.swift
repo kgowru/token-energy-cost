@@ -73,10 +73,6 @@ struct InsightsView: View {
                     }
                     .font(.caption).monospacedDigit()
                 }
-                Text("A ceiling, not a plan. Nobody should run everything on one "
-                     + "model. It holds turn count fixed, and a weaker model that "
-                     + "needs more turns gives the saving back.")
-                    .font(.caption2).foregroundStyle(.secondary)
             }
         }
         .onAppear { seenRecs = engine.liveRecsSignature() }

@@ -88,7 +88,7 @@ struct SessionRow: View {
             // Long context is where cost runs away superlinearly, so outliers
             // are worth calling out on the row rather than leaving to inference.
             if session.avgContextTokens > longThreshold {
-                Text("avg context \(Format.tokens(session.avgContextTokens)) — "
+                Text("avg context \(Format.tokens(session.avgContextTokens)), "
                      + "well above your median")
                     .font(.caption2).foregroundStyle(.orange)
             }
@@ -136,7 +136,7 @@ struct HourlyBars: View {
                         if inside { hovered = h.hour }
                         else if hovered == h.hour { hovered = nil }
                     }
-                    .help(String(format: "%02d:00 — %@ · %d req", h.hour,
+                    .help(String(format: "%02d:00 · %@ · %d req", h.hour,
                                  Format.usd(h.usd), h.requests))
                 }
             }

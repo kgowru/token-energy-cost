@@ -22,11 +22,10 @@ Reads `~/.claude/projects`; it's empty until you've used Claude Code.
 Upgrading from v0.1.0: just replace the copy in Applications. Your history lives
 in the Claude Code logs rather than in the app, so there's nothing to migrate.
 
-### The honest caveat
+### How much to trust these numbers
 
-Unchanged from v0.1.0 — the dollars are exact; the energy is a modelled estimate
-anchored to public, production-grade measurements and carrying a wide band. Use
-it for relative comparisons, not as a precise meter. The Method pane shows all
-the workings.
+Unchanged from v0.1.0. The dollars are exact. The energy is an estimate, built on
+the best public measurements available. Use it to compare one model against
+another, not as a meter reading. The Method pane shows all the workings.
 
 Makes zero network calls. Independent project, not affiliated with Anthropic.

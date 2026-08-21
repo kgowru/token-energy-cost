@@ -55,12 +55,11 @@ struct ModelsView: View {
                 }
             }
 
-            Text("Coefficients are tier estimates anchored to published per-query "
-                 + "measurements, scaled by price as a weak proxy for compute. No "
-                 + "vendor publishes per-token energy for these models, and Anthropic "
-                 + "publishes nothing — so treat the columns above as ordering, not "
-                 + "absolute truth.")
-                .font(.caption2).foregroundStyle(.tertiary)
+            Text("These are estimates, based on published per-query measurements and "
+                 + "scaled by price as a rough stand-in for model size. No vendor "
+                 + "publishes per-token energy, so read the columns above as an "
+                 + "ordering, not as absolute truth.")
+                .font(.caption2).foregroundStyle(.secondary)
         }
     }
 

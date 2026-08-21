@@ -124,7 +124,7 @@ struct FooterView: View {
             } label: {
                 Image(systemName: metric == .energy ? "bolt.fill" : "dollarsign")
             }
-            .help("Menu bar shows \(metric == .energy ? "energy" : "cost") — click to show \(metric == .energy ? "cost" : "energy")")
+            .help("Menu bar shows \(metric == .energy ? "energy" : "cost"). Click to show \(metric == .energy ? "cost" : "energy")")
             // No Refresh button: the FSEvents watcher re-ingests within a couple
             // of seconds of Claude Code writing, with a 60s full-rescan backstop,
             // so the number is already current and the button only ever invited
